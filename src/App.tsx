@@ -8,7 +8,7 @@ const VIDEO_SRC =
 function LogoMark() {
   return (
     <img
-      src="/logo.svg"
+      src="/logo.jpeg"
       alt="Z barber studio"
       className="h-7 w-auto block"
       draggable={false}
