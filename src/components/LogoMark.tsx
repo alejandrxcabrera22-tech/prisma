@@ -5,7 +5,7 @@ type LogoMarkProps = {
 export function LogoMark({ className = 'h-7 w-auto' }: LogoMarkProps) {
   return (
     <img
-      src="/logo.jpeg"
+      src={`${import.meta.env.BASE_URL}logo.jpeg`}
       alt="Z barber studio"
       className={`${className} block`}
       draggable={false}
