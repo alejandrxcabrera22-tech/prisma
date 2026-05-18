@@ -1,5 +1,5 @@
 {
-  "name": "prisma",
+  "name": "wortek",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,7 +12,8 @@
     "framer-motion": "^12.38.0",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.15.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
