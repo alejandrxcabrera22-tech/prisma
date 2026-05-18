@@ -1,7 +1,31 @@
+import { useEffect, useRef } from 'react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SectionLabel } from '../components/SectionLabel'
 import { BUSINESS } from '../data/business'
+import { animateHeading, clipReveal, fadeUp } from '../lib/animations'
+
+gsap.registerPlugin(ScrollTrigger)
 
 export function LocationSection() {
+  const labelRef = useRef<HTMLDivElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const mapRef = useRef<HTMLDivElement>(null)
+  const contactRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const cleanups: Array<() => void> = []
+    if (labelRef.current) cleanups.push(fadeUp(labelRef.current, { y: 16 }))
+    if (headingRef.current)
+      cleanups.push(animateHeading(headingRef.current, { delay: 0.05 }))
+    if (mapRef.current) cleanups.push(clipReveal(mapRef.current, { delay: 0.1 }))
+    if (contactRef.current) {
+      const blocks = Array.from(contactRef.current.children) as HTMLElement[]
+      cleanups.push(fadeUp(blocks, { y: 26, stagger: 0.1 }))
+    }
+    return () => cleanups.forEach((fn) => fn())
+  }, [])
+
   return (
     <section
       id="ubicacion"
@@ -9,26 +33,37 @@ export function LocationSection() {
     >
       <div className="max-w-6xl mx-auto">
         <div className="mb-16 md:mb-20">
-          <SectionLabel number="05">Visítanos</SectionLabel>
-          <h2 className="mt-6 font-heading italic text-5xl sm:text-6xl md:text-7xl text-white leading-[0.95] max-w-3xl">
-            {BUSINESS.address.street},<br />
-            <span className="text-white/55">{BUSINESS.address.city}.</span>
+          <div ref={labelRef}>
+            <SectionLabel number="05">Visítanos</SectionLabel>
+          </div>
+          <h2
+            ref={headingRef}
+            className="mt-6 font-heading italic text-4xl sm:text-5xl md:text-6xl text-white leading-[1.04] tracking-[-0.01em] max-w-3xl"
+          >
+            {BUSINESS.address.street}, {BUSINESS.address.city}.
           </h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-7 rounded-2xl overflow-hidden aspect-[4/3] lg:aspect-auto lg:h-[520px] bg-white/5">
+          <div
+            ref={mapRef}
+            className="lg:col-span-7 rounded-2xl overflow-hidden aspect-[4/3] lg:aspect-auto lg:h-[520px] bg-white/5"
+          >
             <iframe
               title="Mapa Z barber studio"
               src={BUSINESS.mapsEmbedSrc}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="w-full h-full grayscale contrast-[1.1] brightness-[0.85]"
-              style={{ border: 0, filter: 'grayscale(1) contrast(1.1) brightness(0.85) invert(0.92) hue-rotate(180deg)' }}
+              className="w-full h-full"
+              style={{
+                border: 0,
+                filter:
+                  'grayscale(1) contrast(1.1) brightness(0.85) invert(0.92) hue-rotate(180deg)',
+              }}
             />
           </div>
 
-          <div className="lg:col-span-5 flex flex-col gap-10">
+          <div ref={contactRef} className="lg:col-span-5 flex flex-col gap-10">
             <div>
               <p className="text-[10px] font-body uppercase tracking-[0.3em] text-white/40 mb-3">
                 Dirección

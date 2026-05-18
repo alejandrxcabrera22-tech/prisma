@@ -23,6 +23,30 @@ body {
   font-family: 'Barlow', sans-serif;
   background: #000;
   color: #fff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Lenis smooth scroll wiring */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Hide content briefly while word-splitter runs to avoid FOUC */
+.word-inner {
+  display: inline-block;
+  will-change: transform, opacity;
 }
 
 .liquid-glass {

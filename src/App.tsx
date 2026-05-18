@@ -1,3 +1,4 @@
+import { useSmoothScroll } from './lib/useSmoothScroll'
 import { HeroSection } from './sections/HeroSection'
 import { ServicesSection } from './sections/ServicesSection'
 import { GallerySection } from './sections/GallerySection'
@@ -8,6 +9,8 @@ import { TestimonialsSection } from './sections/TestimonialsSection'
 import { FooterSection } from './sections/FooterSection'
 
 export default function App() {
+  useSmoothScroll()
+
   return (
     <div className="min-h-screen bg-black text-white font-body overflow-x-hidden">
       <HeroSection />

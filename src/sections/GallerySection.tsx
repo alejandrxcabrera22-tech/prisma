@@ -3,13 +3,26 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { SectionLabel } from '../components/SectionLabel'
 import { GALLERY } from '../data/business'
+import { animateHeading, fadeUp } from '../lib/animations'
 
 gsap.registerPlugin(ScrollTrigger)
 
 export function GallerySection() {
   const containerRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const labelRef = useRef<HTMLDivElement>(null)
 
+  // Entrance animations on title.
+  useEffect(() => {
+    if (!headingRef.current) return
+    const cleanups: Array<() => void> = []
+    if (labelRef.current) cleanups.push(fadeUp(labelRef.current, { y: 16 }))
+    cleanups.push(animateHeading(headingRef.current, { delay: 0.05 }))
+    return () => cleanups.forEach((fn) => fn())
+  }, [])
+
+  // Horizontal pinned scroll for the gallery track.
   useEffect(() => {
     const container = containerRef.current
     const track = trackRef.current
@@ -48,10 +61,19 @@ export function GallerySection() {
   }, [])
 
   return (
-    <section id="galeria" ref={containerRef} className="relative bg-black h-screen overflow-hidden">
+    <section
+      id="galeria"
+      ref={containerRef}
+      className="relative bg-black h-screen overflow-hidden"
+    >
       <div className="absolute top-0 left-0 right-0 z-10 px-6 md:px-10 pt-32 md:pt-40 pointer-events-none">
-        <SectionLabel number="02">Galería</SectionLabel>
-        <h2 className="mt-6 font-heading italic text-5xl sm:text-6xl md:text-7xl text-white leading-[0.95] max-w-2xl">
+        <div ref={labelRef}>
+          <SectionLabel number="02">Galería</SectionLabel>
+        </div>
+        <h2
+          ref={headingRef}
+          className="mt-6 font-heading italic text-4xl sm:text-5xl md:text-6xl text-white leading-[1.02] tracking-[-0.01em] max-w-2xl"
+        >
           Trabajos del estudio.
         </h2>
       </div>
@@ -79,7 +101,8 @@ export function GallerySection() {
                   loading="lazy"
                 />
                 <div className="absolute bottom-4 left-4 text-[10px] font-body uppercase tracking-[0.25em] text-white/70">
-                  {String(i + 1).padStart(2, '0')} / {String(GALLERY.length).padStart(2, '0')}
+                  {String(i + 1).padStart(2, '0')} /{' '}
+                  {String(GALLERY.length).padStart(2, '0')}
                 </div>
               </figure>
             )
