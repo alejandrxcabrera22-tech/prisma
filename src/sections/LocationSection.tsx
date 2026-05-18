@@ -40,7 +40,7 @@ export function LocationSection() {
             ref={headingRef}
             className="mt-6 font-heading italic text-4xl sm:text-5xl md:text-6xl text-white leading-[1.04] tracking-[-0.01em] max-w-3xl"
           >
-            {BUSINESS.address.street}, {BUSINESS.address.city}.
+            En Plaza Castilla, Elche.
           </h2>
         </div>
 

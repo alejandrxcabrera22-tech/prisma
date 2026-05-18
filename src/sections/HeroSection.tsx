@@ -245,9 +245,8 @@ export function HeroSection() {
           mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}
       >
-        <p className="hidden sm:block text-sm font-body font-light text-white/75 max-w-[220px] leading-relaxed">
-          Tres años cortando en Plaza Castilla, Elche. Oficio, navaja y café para
-          quien entiende el corte como un ritual.
+        <p className="hidden sm:block font-heading italic text-white/85 text-2xl md:text-3xl leading-[1.05] max-w-[220px]">
+          Tres años. Una silla.
         </p>
 
         <div className="absolute left-1/2 -translate-x-1/2 bottom-0 flex items-center gap-3">
@@ -268,8 +267,8 @@ export function HeroSection() {
           </a>
         </div>
 
-        <p className="hidden sm:block text-sm font-body font-light text-white/75 max-w-[220px] leading-relaxed text-right">
-          {BUSINESS.description.slice(0, 110)}
+        <p className="hidden sm:block font-heading italic text-white/85 text-2xl md:text-3xl leading-[1.05] max-w-[220px] text-right">
+          El oficio entero.
         </p>
       </div>
     </section>

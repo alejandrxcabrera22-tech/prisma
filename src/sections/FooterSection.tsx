@@ -9,7 +9,7 @@ export function FooterSection() {
           <div className="max-w-xl">
             <LogoMark className="h-10 w-auto mb-8" />
             <p className="font-heading italic text-3xl md:text-4xl text-white leading-[1.05]">
-              ¿Reservamos tu hueco?
+              Pide tu cita.
             </p>
             <a
               href={BUSINESS.booksyUrl}

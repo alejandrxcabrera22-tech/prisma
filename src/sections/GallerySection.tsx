@@ -74,7 +74,7 @@ export function GallerySection() {
           ref={headingRef}
           className="mt-6 font-heading italic text-4xl sm:text-5xl md:text-6xl text-white leading-[1.02] tracking-[-0.01em] max-w-2xl"
         >
-          Trabajos del estudio.
+          Cortes que firmamos.
         </h2>
       </div>
 
