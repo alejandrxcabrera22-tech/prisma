@@ -1,95 +1,275 @@
-import { motion } from 'framer-motion'
-import { ArrowRight } from 'lucide-react'
-import { WordsPullUp } from '../components/WordsPullUp'
+import { useEffect, useRef, useState } from 'react'
+import { gsap } from 'gsap'
+import { LogoMark } from '../components/LogoMark'
+import { BUSINESS, NAV_LINKS } from '../data/business'
 
-const HERO_VIDEO =
-  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_170732_8a9ccda6-5cff-4628-b164-059c500a2b41.mp4'
+const VIDEO_SRC =
+  'https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260511_080827_a9e5ad52-b6ee-4e79-b393-d936f179cfd7.mp4'
 
-const NAV_LINKS = ['Our story', 'Collective', 'Workshops', 'Programs', 'Inquiries']
-
-const EASE = [0.16, 1, 0.3, 1] as const
+type RVFCVideo = HTMLVideoElement & {
+  requestVideoFrameCallback?: (cb: () => void) => number
+  cancelVideoFrameCallback?: (id: number) => void
+}
 
 export function HeroSection() {
+  const [mounted, setMounted] = useState(false)
+  const [framesReady, setFramesReady] = useState(false)
+
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const videoBgRef = useRef<HTMLDivElement | null>(null)
+  const displayCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const framesRef = useRef<HTMLCanvasElement[]>([])
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Effect 1 — boomerang frame capture
+  useEffect(() => {
+    const video = videoRef.current as RVFCVideo | null
+    if (!video) return
+
+    let capturing = true
+    let lastTime = -1
+    let rafId = 0
+    let rvfcId = 0
+    const MAX_WIDTH = 960
+    const frames: HTMLCanvasElement[] = []
+
+    const captureFrame = () => {
+      if (!capturing) return
+      if (video.readyState < 2) return scheduleNext()
+      if (video.currentTime === lastTime) return scheduleNext()
+      lastTime = video.currentTime
+
+      const scale = Math.min(1, MAX_WIDTH / video.videoWidth)
+      const w = Math.floor(video.videoWidth * scale)
+      const h = Math.floor(video.videoHeight * scale)
+      if (w === 0 || h === 0) return scheduleNext()
+
+      const canvas = document.createElement('canvas')
+      canvas.width = w
+      canvas.height = h
+      const ctx = canvas.getContext('2d')
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, w, h)
+        frames.push(canvas)
+      }
+      scheduleNext()
+    }
+
+    const scheduleNext = () => {
+      if (!capturing) return
+      if (typeof video.requestVideoFrameCallback === 'function') {
+        rvfcId = video.requestVideoFrameCallback(captureFrame)
+      } else {
+        rafId = requestAnimationFrame(captureFrame)
+      }
+    }
+
+    const onEnded = () => {
+      capturing = false
+      framesRef.current = frames
+      setFramesReady(true)
+    }
+
+    const onLoaded = () => {
+      video.play().catch(() => {})
+      scheduleNext()
+    }
+
+    video.addEventListener('loadedmetadata', onLoaded)
+    video.addEventListener('ended', onEnded)
+    if (video.readyState >= 1) onLoaded()
+
+    return () => {
+      capturing = false
+      video.removeEventListener('loadedmetadata', onLoaded)
+      video.removeEventListener('ended', onEnded)
+      if (rafId) cancelAnimationFrame(rafId)
+      if (rvfcId && typeof video.cancelVideoFrameCallback === 'function') {
+        video.cancelVideoFrameCallback(rvfcId)
+      }
+    }
+  }, [])
+
+  // Effect 2 — boomerang render loop
+  useEffect(() => {
+    if (!framesReady) return
+    const canvas = displayCanvasRef.current
+    const frames = framesRef.current
+    if (!canvas || frames.length === 0) return
+
+    canvas.width = frames[0].width
+    canvas.height = frames[0].height
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    let index = 0
+    let direction = 1
+    let last = performance.now()
+    const interval = 1000 / 30
+    let rafId = 0
+
+    const render = (now: number) => {
+      if (now - last >= interval) {
+        ctx.drawImage(frames[index], 0, 0)
+        index += direction
+        if (index >= frames.length - 1) {
+          index = frames.length - 1
+          direction = -1
+        } else if (index <= 0) {
+          index = 0
+          direction = 1
+        }
+        last = now
+      }
+      rafId = requestAnimationFrame(render)
+    }
+    rafId = requestAnimationFrame(render)
+    return () => cancelAnimationFrame(rafId)
+  }, [framesReady])
+
+  // Effect 3 — gsap parallax on mouse
+  useEffect(() => {
+    const el = videoBgRef.current
+    if (!el) return
+
+    const strength = 20
+    let targetX = 0
+    let targetY = 0
+    let currentX = 0
+    let currentY = 0
+    let rafId = 0
+
+    const onMouseMove = (e: MouseEvent) => {
+      const cx = window.innerWidth / 2
+      const cy = window.innerHeight / 2
+      targetX = ((e.clientX - cx) / cx) * strength
+      targetY = ((e.clientY - cy) / cy) * strength
+    }
+
+    const tick = () => {
+      currentX += (targetX - currentX) * 0.06
+      currentY += (targetY - currentY) * 0.06
+      gsap.set(el, { x: currentX, y: currentY })
+      rafId = requestAnimationFrame(tick)
+    }
+
+    window.addEventListener('mousemove', onMouseMove)
+    rafId = requestAnimationFrame(tick)
+    return () => {
+      window.removeEventListener('mousemove', onMouseMove)
+      cancelAnimationFrame(rafId)
+    }
+  }, [])
+
   return (
-    <section className="h-screen p-4 md:p-6">
-      <div className="relative w-full h-full rounded-2xl md:rounded-[2rem] overflow-hidden">
-        {/* Background video */}
+    <section
+      id="inicio"
+      className="relative h-screen w-full overflow-hidden bg-black"
+    >
+      {/* Video background */}
+      <div
+        ref={videoBgRef}
+        className="absolute inset-0 z-0 scale-[1.08] origin-center"
+      >
         <video
-          className="absolute inset-0 w-full h-full object-cover"
-          autoPlay
-          loop
+          ref={videoRef}
+          src={VIDEO_SRC}
           muted
           playsInline
-          src={HERO_VIDEO}
+          preload="auto"
+          crossOrigin="anonymous"
+          className="w-full h-full object-cover"
+          style={{ display: framesReady ? 'none' : 'block' }}
         />
+        <canvas
+          ref={displayCanvasRef}
+          className="w-full h-full object-cover"
+          style={{ display: framesReady ? 'block' : 'none' }}
+        />
+      </div>
 
-        {/* Noise overlay */}
-        <div className="noise-overlay absolute inset-0 opacity-[0.7] mix-blend-overlay pointer-events-none" />
+      {/* Title */}
+      <div
+        className={`absolute left-0 right-0 z-20 w-full px-4 transition-all duration-1000 ${
+          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+        }`}
+        style={{ top: '126px' }}
+      >
+        <h1 className="hero-title select-none">Z barber studio</h1>
+      </div>
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/60 pointer-events-none" />
-
-        {/* Navbar */}
-        <nav className="absolute top-0 left-1/2 -translate-x-1/2 z-20 bg-black rounded-b-2xl md:rounded-b-3xl px-4 py-2 md:px-8">
-          <ul className="flex items-center gap-3 sm:gap-6 md:gap-12 lg:gap-14">
+      {/* Nav */}
+      <nav className="fixed top-5 left-1/2 -translate-x-1/2 z-50 whitespace-nowrap">
+        <div className="liquid-glass flex items-center gap-6 rounded px-4 py-2.5">
+          <a href="#inicio" aria-label="Inicio">
+            <LogoMark />
+          </a>
+          <div className="hidden md:flex items-center gap-5">
             {NAV_LINKS.map((link) => (
-              <li key={link}>
-                <a
-                  href="#"
-                  className="text-[10px] sm:text-xs md:text-sm transition-colors duration-200"
-                  style={{ color: 'rgba(225, 224, 204, 0.8)' }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLAnchorElement).style.color = '#E1E0CC')
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLAnchorElement).style.color =
-                      'rgba(225, 224, 204, 0.8)')
-                  }
-                >
-                  {link}
-                </a>
-              </li>
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm font-body font-light text-white/70 hover:text-white transition-colors duration-200"
+              >
+                {link.label}
+              </a>
             ))}
-          </ul>
-        </nav>
-
-        {/* Hero content */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 grid grid-cols-12 gap-4 md:gap-8 items-end px-6 md:px-10 pb-6 md:pb-10">
-          <div className="col-span-12 lg:col-span-8 overflow-hidden">
-            <WordsPullUp
-              text="Prisma"
-              showAsterisk
-              className="text-[26vw] sm:text-[24vw] md:text-[22vw] lg:text-[20vw] xl:text-[19vw] 2xl:text-[20vw] font-medium leading-[0.85] tracking-[-0.07em]"
-              style={{ color: '#E1E0CC' }}
-            />
           </div>
-
-          <div className="col-span-12 lg:col-span-4 flex flex-col gap-5 lg:items-start lg:pb-4">
-            <motion.p
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.9, ease: EASE }}
-              className="text-primary/70 text-xs sm:text-sm md:text-base"
-              style={{ lineHeight: 1.2 }}
+          <div className="flex items-center gap-3 ml-4">
+            <a
+              href={BUSINESS.booksyUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="hidden sm:inline text-sm font-body font-light text-white/70 hover:text-white transition-colors duration-200"
             >
-              Prisma is a worldwide network of visual artists, filmmakers and
-              storytellers bound not by place, status or labels but by passion
-              and hunger to unlock potential through our unique perspectives.
-            </motion.p>
-
-            <motion.button
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.9, ease: EASE }}
-              className="group bg-primary rounded-full pl-5 pr-1 py-1 flex items-center gap-2 hover:gap-3 transition-all duration-300 text-black font-medium text-sm sm:text-base"
+              Acceder
+            </a>
+            <a
+              href={BUSINESS.booksyUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              className="liquid-glass-strong text-sm font-body font-medium text-white rounded px-4 py-1.5 transition-all duration-200 hover:scale-[1.04] hover:shadow-[0_0_16px_2px_rgba(255,255,255,0.12)] active:scale-[0.97]"
             >
-              <span>Join the lab</span>
-              <span className="bg-black rounded-full w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                <ArrowRight size={16} style={{ color: '#E1E0CC' }} />
-              </span>
-            </motion.button>
+              Reservar
+            </a>
           </div>
         </div>
+      </nav>
+
+      {/* Bottom row */}
+      <div
+        className={`absolute bottom-12 left-0 right-0 px-6 md:px-10 flex items-end justify-between z-20 transition-all duration-1000 delay-300 ${
+          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+        }`}
+      >
+        <p className="hidden sm:block font-heading italic text-white/85 text-2xl md:text-3xl leading-[1.05] max-w-[220px]">
+          Tres años. Una silla.
+        </p>
+
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-0 flex items-center gap-3">
+          <a
+            href={BUSINESS.booksyUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="group relative bg-white text-black text-sm font-body font-medium rounded px-6 py-3 overflow-hidden active:scale-[0.97] transition-all duration-200 shadow-[0_0_0_0_rgba(255,255,255,0)] hover:shadow-[0_0_24px_4px_rgba(255,255,255,0.25)] hover:scale-[1.03]"
+          >
+            <span className="relative z-10">Reservar cita</span>
+            <span className="absolute inset-0 bg-gradient-to-b from-white to-white/85 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+          </a>
+          <a
+            href="#servicios"
+            className="liquid-glass group text-white text-sm font-body font-medium rounded px-6 py-3 active:scale-[0.97] transition-all duration-200 hover:scale-[1.03] hover:shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_0_20px_2px_rgba(255,255,255,0.07)]"
+          >
+            Ver servicios
+          </a>
+        </div>
+
+        <p className="hidden sm:block font-heading italic text-white/85 text-2xl md:text-3xl leading-[1.05] max-w-[220px] text-right">
+          El oficio entero.
+        </p>
       </div>
     </section>
   )

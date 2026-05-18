@@ -5,3 +5,7 @@ dist-ssr
 *.local
 *.log
 .vite
+*.tsbuildinfo
+vite.config.js
+vite.config.d.ts
+*.zip
